@@ -1,68 +1,64 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+:root{
+  --maxw: 1100px;
+  --accent: #1f7aef;
+  --muted: #666;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
+*{box-sizing:border-box}
+body{font-family:Inter, system-ui, Arial, sans-serif; margin:0; color:#111; background:#f7f8fb;}
+.container{max-width:var(--maxw); margin:24px auto; padding:0 16px;}
+.container-row{max-width:var(--maxw); margin:0 auto; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:16px;}
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
+/* Navbar */
+.navbar{background:white; border-bottom:1px solid #eee; position:sticky; top:0; z-index:30;}
+.brand{font-weight:700; color:var(--accent); text-decoration:none;}
+.search-form{display:flex; gap:8px;}
+.search-form input{padding:8px 10px; border:1px solid #ddd; border-radius:6px;}
+.search-form button{padding:8px 10px; background:var(--accent); color:white; border:none; border-radius:6px; cursor:pointer;}
+.nav-links a{margin-left:8px; text-decoration:none; color:var(--muted)}
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
+/* Hero */
+.hero{background:linear-gradient(90deg,#eef6ff,#ffffff); padding:28px 0; margin-bottom:18px;}
+.hero-inner{display:flex; gap:20px; align-items:center; justify-content:space-between;}
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
+/* categories */
+.categories-row{display:flex; gap:12px; margin:12px 0;}
+.category-card{background:white; padding:12px; border-radius:8px; flex:1; box-shadow:0 1px 4px rgba(0,0,0,0.03)}
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
+/* grid */
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; margin:12px 0}
+
+/* product card */
+.product-card{background:white; border-radius:8px; overflow:hidden; box-shadow:0 1px 6px rgba(0,0,0,0.04); display:flex; flex-direction:column;}
+.product-card img{width:100%; height:150px; object-fit:cover;}
+.card-body{padding:12px; flex:1; display:flex; flex-direction:column;}
+.card-body h3{margin:0 0 6px 0; font-size:16px}
+.category{font-size:13px; color:var(--muted)}
+.price{font-weight:700; margin-top:auto}
+.card-actions{display:flex; gap:8px; margin-top:10px}
+.btn{padding:8px 10px; background:var(--accent); color:white; border:none; border-radius:6px; text-decoration:none; cursor:pointer}
+.btn.secondary{background:transparent; border:1px solid #ddd; color:var(--muted)}
+
+/* search layout */
+.search-body{display:flex; gap:16px; margin-top:12px}
+.sidebar{width:200px; background:white; padding:12px; border-radius:8px}
+.sidebar ul{list-style:none; padding:0; margin:0}
+.sidebar li{margin-bottom:8px}
+.sidebar button{background:transparent; border:none; cursor:pointer; color:var(--muted)}
+.sidebar button.active{font-weight:600; color:var(--accent)}
+
+/* results, pagination */
+.results{flex:1}
+.pagination{display:flex; gap:12px; align-items:center; justify-content:center; margin:18px 0}
+.pagination button{padding:8px 12px; border-radius:6px; border:1px solid #ddd; background:white; cursor:pointer}
+
+/* product detail */
+.detail-grid{display:flex; gap:20px; align-items:flex-start}
+.detail-image img{width:450px; max-width:100%; border-radius:8px}
+.detail-info h1{margin-top:0}
+.detail-actions{margin-top:14px; display:flex; gap:8px}
+.btn-link{padding:8px 12px; border-radius:6px; border:1px solid #ddd; text-decoration:none; color:var(--muted)}
+
+/* footer */
+.footer{background:#111; color:#eee; margin-top:30px; padding:18px 0}
+.footer a{color:#ddd; margin-left:8px; text-decoration:none}
