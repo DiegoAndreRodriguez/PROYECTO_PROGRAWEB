@@ -1,18 +1,15 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-// 1. Importa el hook 'useCart' que ya creaste
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Navbar() {
-  // El estado 'q' para la búsqueda se mantiene igual
   const [q, setQ] = React.useState("");
   const navigate = useNavigate();
-
-  // 2. Usa el hook para obtener el estado del carrito directamente
+  
   const { cart } = useCart();
-
-  // 3. Calcula el total de ítems directamente del estado 'cart'
-  //    No necesitas useEffect ni event listeners para esto.
+  const { user, logout } = useAuth();
+  
   const count = cart.reduce((sum, item) => sum + item.qty, 0);
 
   function onSubmit(e) {
@@ -21,6 +18,20 @@ export default function Navbar() {
     if (query) {
       navigate(`/search?q=${encodeURIComponent(query)}&page=1`);
     }
+  }
+
+  function handleAccountClick(e) {
+    e.preventDefault();
+    if (user) {
+      navigate("/user-dashboard");
+    } else {
+      navigate("/login");
+    }
+  }
+
+  function handleLogout() {
+    logout();
+    navigate("/");
   }
 
   return (
@@ -42,11 +53,47 @@ export default function Navbar() {
 
         <nav className="nav-links">
           <Link to="/search">Explorar</Link>
-          {/* 4. El resto del código funciona igual, pero ahora se actualiza reactivamente */}
+          
           <Link to="/cart" id="cart-link">
             Carrito {count > 0 && <span className="badge">{count}</span>}
           </Link>
+
           <a href="#footer">Contacto</a>
+
+          <span style={{ 
+            color: "rgba(255, 255, 255, 0.5)", 
+            margin: "0 10px",
+            userSelect: "none"
+          }}>
+            |
+          </span>
+
+          {user ? (
+            <>
+              <a href="#" onClick={handleAccountClick}>
+                Hola, {user.name}
+              </a>
+              <button 
+                onClick={handleLogout} 
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "white",
+                  cursor: "pointer",
+                  padding: "0",
+                  fontSize: "inherit",
+                  textDecoration: "underline",
+                  marginLeft: "15px"
+                }}
+              >
+                Cerrar sesión
+              </button>
+            </>
+          ) : (
+            <a href="#" onClick={handleAccountClick}>
+              Mi cuenta
+            </a>
+          )}
         </nav>
       </div>
     </header>
