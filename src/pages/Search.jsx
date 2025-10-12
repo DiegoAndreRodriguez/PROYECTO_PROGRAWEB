@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { products, categories } from "../data/products";
 import ProductCard from "../components/ProductCard";
 
+// Tu custom hook se mantiene igual
 function useQuery() {
   return new URLSearchParams(useLocation().search);
 }
@@ -16,14 +17,13 @@ export default function Search() {
   const page = Math.max(1, parseInt(query.get("page") || "1", 10));
   const pageSize = 12;
 
-  // Filtrado
+  // El filtrado y ordenamiento se mantienen igual...
   let filtered = products.filter(p => {
     const matchQ = !q || p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
     const matchCat = !cat || p.category === cat;
     return matchQ && matchCat;
   });
 
-  // Orden
   if (sort === "price_asc") filtered.sort((a,b) => a.price - b.price);
   else if (sort === "price_desc") filtered.sort((a,b) => b.price - a.price);
   else if (sort === "name_asc") filtered.sort((a,b) => a.name.localeCompare(b.name));
@@ -36,22 +36,31 @@ export default function Search() {
   const start = (currentPage - 1) * pageSize;
   const pageItems = filtered.slice(start, start + pageSize);
 
+  // --- ✨ AQUÍ ESTÁ LA CORRECCIÓN ---
   function updateParams(newParams) {
-    const params = new URLSearchParams(useLocation().search);
+    // 1. Crea una copia de los parámetros actuales usando 'query', que ya existe.
+    const params = new URLSearchParams(query.toString());
+
+    // 2. Itera sobre los nuevos parámetros para actualizar la copia.
     Object.keys(newParams).forEach(k => {
-      if (newParams[k] === null) params.delete(k);
-      else params.set(k, newParams[k]);
+      if (newParams[k] === null) {
+        params.delete(k); // Elimina el parámetro si el valor es null
+      } else {
+        params.set(k, newParams[k]); // Añade o actualiza el parámetro
+      }
     });
+
+    // 3. Navega a la nueva URL.
     navigate(`/search?${params.toString()}`);
   }
 
   return (
-    <div className="search-page">
+    // El resto de tu JSX se mantiene exactamente igual.
+    <div className="search-page container">
       <div className="search-controls container-row">
         <div>
           <strong>Resultados:</strong> {total}
         </div>
-
         <div className="controls-right">
           <label>
             Ordenar:
