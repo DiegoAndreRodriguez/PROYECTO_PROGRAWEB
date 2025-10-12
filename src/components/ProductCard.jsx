@@ -1,7 +1,9 @@
 import React from "react";
+import { useCart } from "../context/CartContext";
 import { Link } from "react-router-dom";
 
 export default function ProductCard({ product }) {
+  const { addItem } = useCart();
   return (
     <article className="product-card">
       <img src={product.image} alt={product.name} />
@@ -11,7 +13,7 @@ export default function ProductCard({ product }) {
         <p className="price">${product.price}</p>
         <div className="card-actions">
           <Link to={`/product/${product.id}`} className="btn">Ver detalle</Link>
-          <button className="btn secondary" onClick={() => alert("Agregar al carrito (pendiente: Alumno 2)")} >
+          <button className="btn secondary" onClick={() => addItem(product,1)} >
             Agregar
           </button>
         </div>

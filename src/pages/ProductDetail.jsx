@@ -1,8 +1,10 @@
 import React from "react";
 import { useParams, Link } from "react-router-dom";
 import { products } from "../data/products";
+import { useCart } from "../context/CartContext";
 
 export default function ProductDetail() {
+  const { addItem } = useCart();
   const { id } = useParams();
   const product = products.find(p => String(p.id) === String(id));
 
@@ -28,7 +30,7 @@ export default function ProductDetail() {
           <p>{product.description}</p>
 
           <div className="detail-actions">
-            <button onClick={() => alert("Agregar al carrito (Alumno 2 implementará).")}>Agregar al carrito</button>
+            <button onClick={() => addItem(product,1)}>Agregar al carrito</button>
             <Link to="/search" className="btn-link">Seguir explorando</Link>
           </div>
         </div>

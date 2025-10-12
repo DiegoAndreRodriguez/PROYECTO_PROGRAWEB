@@ -40,3 +40,45 @@
 .read-the-docs {
   color: #888;
 }
+
+/* --- Corrige estilos perdidos tras reemplazar <a> por <Link> o <button> --- */
+
+/* Asegura que los <Link> de react-router-dom tengan estilo de enlace */
+.nav-links a,
+.nav-links button,
+.nav-links .link,
+.nav-links .nav-link {
+  color: #c7d2fe;
+  background: none;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 6px 10px;
+  transition: color 0.2s ease;
+}
+
+/* Hover y foco igual que los enlaces */
+.nav-links a:hover,
+.nav-links button:hover,
+.nav-links .link:hover {
+  color: #ffffff;
+}
+
+/* Si quieres mantener el subrayado del enlace activo */
+.nav-links .active {
+  border-bottom: 2px solid #8b5cf6;
+}
+
+/* Ajuste general para que los botones del navbar no se vean feos */
+.nav-links button {
+  display: inline;
+  background: transparent;
+}
+
+/* Efecto visual consistente para Link en todo el sitio */
+a,
+button,
+.link {
+  transition: all 0.2s ease-in-out;
+}
