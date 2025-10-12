@@ -52,7 +52,7 @@ export default function Navbar() {
         </form>
 
         <nav className="nav-links">
-          <Link to="/search">Explorar</Link>
+          <Link to="/search">Explorar </Link>
           
           <Link to="/cart" id="cart-link">
             Carrito {count > 0 && <span className="badge">{count}</span>}
