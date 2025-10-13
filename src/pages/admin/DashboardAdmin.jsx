@@ -128,6 +128,12 @@ export default function DashboardAdmin() {
         <button style={btnStyle} onClick={() => navigate("/admin/categorias")}>
           Gestión de Categorías
         </button>
+        <button style={btnStyle} onClick={() => navigate("/admin/gestionar-usuarios")}>
+          Gestión de Usuarios
+        </button>
+        <button style={btnStyle} onClick={() => navigate("/admin/orders-management")}>
+          Gestión de Órdenes
+        </button>
       </div>
 
       {/* Gráfica de ventas */}
