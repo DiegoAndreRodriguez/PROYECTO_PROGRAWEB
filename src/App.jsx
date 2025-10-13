@@ -32,6 +32,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardAdmin from "./pages/admin/DashboardAdmin";
 import ProductosAdmin from "./pages/admin/ProductosAdmin";
 import CategoriasAdmin from "./pages/admin/CategoriasAdmin";
+import UserManagement from "./pages/admin/UserManagement";
+import OrdersManagement from "./pages/admin/OrdersManagement";
+
 
 // Datos iniciales
 import { products, categories } from "./data/products";
@@ -167,6 +170,8 @@ function AppRoutes({
                   />
                 }
               />
+              <Route path="/admin/gestionar-usuarios" element={<UserManagement />} />
+              <Route path="/admin/orders-management" element={<OrdersManagement />} />
             </>
           ) : (
             <Route path="/admin/*" element={<Navigate to="/login" replace />} />
