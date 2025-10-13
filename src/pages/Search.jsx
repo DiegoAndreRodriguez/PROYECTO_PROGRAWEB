@@ -8,7 +8,7 @@ function useQuery() {
   return new URLSearchParams(useLocation().search);
 }
 
-export default function Search() {
+export default function Search({ productList }) {
   const query = useQuery();
   const navigate = useNavigate();
   const q = (query.get("q") || "").toLowerCase();
@@ -18,17 +18,24 @@ export default function Search() {
   const pageSize = 12;
 
   // El filtrado y ordenamiento se mantienen igual
-  let filtered = products.filter(p => {
-    const matchQ = !q || p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
-    const matchCat = !cat || p.category === cat;
-    return matchQ && matchCat;
-  });
+  let filtered = productList
+    .filter((p) => p.active)
+    .filter((p) => {
+      const matchQ =
+        !q ||
+        p.name.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q);
+      const matchCat = !cat || p.category === cat;
+      return matchQ && matchCat;
+    });
 
-  if (sort === "price_asc") filtered.sort((a,b) => a.price - b.price);
-  else if (sort === "price_desc") filtered.sort((a,b) => b.price - a.price);
-  else if (sort === "name_asc") filtered.sort((a,b) => a.name.localeCompare(b.name));
-  else if (sort === "name_desc") filtered.sort((a,b) => b.name.localeCompare(a.name));
-  else filtered.sort((a,b) => b.sold - a.sold); 
+  if (sort === "price_asc") filtered.sort((a, b) => a.price - b.price);
+  else if (sort === "price_desc") filtered.sort((a, b) => b.price - a.price);
+  else if (sort === "name_asc")
+    filtered.sort((a, b) => a.name.localeCompare(b.name));
+  else if (sort === "name_desc")
+    filtered.sort((a, b) => b.name.localeCompare(a.name));
+  else filtered.sort((a, b) => b.sold - a.sold);
 
   const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -42,7 +49,7 @@ export default function Search() {
     const params = new URLSearchParams(query.toString());
 
     //Itera sobre los nuevos parámetros para actualizar la copia.
-    Object.keys(newParams).forEach(k => {
+    Object.keys(newParams).forEach((k) => {
       if (newParams[k] === null) {
         params.delete(k); // Elimina el parámetro si el valor es null
       } else {
@@ -64,7 +71,10 @@ export default function Search() {
         <div className="controls-right">
           <label>
             Ordenar:
-            <select value={sort} onChange={(e) => updateParams({ sort: e.target.value, page: 1 })}>
+            <select
+              value={sort}
+              onChange={(e) => updateParams({ sort: e.target.value, page: 1 })}
+            >
               <option value="relevance">Más vendidos</option>
               <option value="price_asc">Precio ↑</option>
               <option value="price_desc">Precio ↓</option>
@@ -80,11 +90,14 @@ export default function Search() {
           <h4>Categorías</h4>
           <ul>
             <li>
-              <button className={!cat ? "active" : ""} onClick={() => updateParams({ category: null, page: 1 })}>
+              <button
+                className={!cat ? "active" : ""}
+                onClick={() => updateParams({ category: null, page: 1 })}
+              >
                 Todas
               </button>
             </li>
-            {categories.map(c => (
+            {categories.map((c) => (
               <li key={c}>
                 <button
                   className={cat === c ? "active" : ""}
@@ -99,15 +112,30 @@ export default function Search() {
 
         <section className="results">
           <div className="grid">
-            {pageItems.map(p => <ProductCard key={p.id} product={p} />)}
+            {pageItems.length > 0 ? (
+              pageItems.map((p) => <ProductCard key={p.id} product={p} />)
+            ) : (
+              <p style={{ textAlign: "center", width: "100%" }}>
+                No se encontraron productos disponibles.
+              </p>
+            )}
           </div>
 
           <div className="pagination">
-            <button disabled={currentPage <= 1} onClick={() => updateParams({ page: currentPage - 1 })}>
+            <button
+              disabled={currentPage <= 1}
+              onClick={() => updateParams({ page: currentPage - 1 })}
+            >
               « Anterior
             </button>
-            <span> Página {currentPage} de {totalPages} </span>
-            <button disabled={currentPage >= totalPages} onClick={() => updateParams({ page: currentPage + 1 })}>
+            <span>
+              {" "}
+              Página {currentPage} de {totalPages}{" "}
+            </span>
+            <button
+              disabled={currentPage >= totalPages}
+              onClick={() => updateParams({ page: currentPage + 1 })}
+            >
               Siguiente »
             </button>
           </div>

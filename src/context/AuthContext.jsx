@@ -20,6 +20,18 @@ export function AuthProvider({ children }) {
 
   // Login
   function login(email, password) {
+    // --- ADMIN FIJO ---
+    if (email === "admin@gmail.com" && password === "admin123") {
+      const adminUser = {
+        email,
+        name: "Administrador",
+        role: "admin",
+      };
+      setUser(adminUser);
+      localStorage.setItem("user", JSON.stringify(adminUser));
+      return { success: true };
+    }
+    // --- USUARIO NORMAL --
     const users = JSON.parse(localStorage.getItem("users") || "[]");
     const foundUser = users.find(
       (u) => u.email === email && u.password === password
@@ -31,6 +43,7 @@ export function AuthProvider({ children }) {
         name: foundUser.name,
         lastName: foundUser.lastName,
         email: foundUser.email,
+        role: "user",
       };
       setUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));
@@ -42,7 +55,7 @@ export function AuthProvider({ children }) {
   // Registro
   function register(name, lastName, email, password) {
     const users = JSON.parse(localStorage.getItem("users") || "[]");
-    
+
     // Verificar si el email ya existe
     if (users.find((u) => u.email === email)) {
       return { success: false, error: "El email ya está registrado" };
@@ -65,6 +78,7 @@ export function AuthProvider({ children }) {
       name: newUser.name,
       lastName: newUser.lastName,
       email: newUser.email,
+      role: "user",
     };
     setUser(userData);
     localStorage.setItem("user", JSON.stringify(userData));

@@ -7,24 +7,25 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const { login, user } = useAuth();
   const navigate = useNavigate();
 
   // Si ya está logueado, redirigir al dashboard
   React.useEffect(() => {
     if (user) {
-      navigate("/user-dashboard");
+      if (user.role === "admin") navigate("/admin/dashboard");
+      else navigate("/user-dashboard");
     }
   }, [user, navigate]);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError("");
-    
+
     // Validaciones
     if (!email || !password) {
-      setError("Por favor completa todos los campos");
+      setError("Por favor complete todos los campos");
       return;
     }
 
@@ -35,19 +36,33 @@ export default function Login() {
 
     setLoading(true);
 
+    if (email === "admin@gmail.com" && password === "admin123") {
+      const result = login(email, password); // <- pasar los 2 parámetros
+      if (result.success) {
+        navigate("/admin/dashboard");
+      } else {
+        setError(result.error);
+      }
+      setLoading(false);
+      return;
+    }
+
     // Intentar login
     const result = login(email, password);
 
-    if (result.success) {
+    if (result?.success) {
       navigate("/user-dashboard");
     } else {
-      setError(result.error);
-      setLoading(false);
+      setError(result?.error || "Credenciales incorrectas");
     }
+    setLoading(false);
   }
 
   return (
-    <div className="container" style={{ maxWidth: "500px", margin: "50px auto" }}>
+    <div
+      className="container"
+      style={{ maxWidth: "500px", margin: "50px auto" }}
+    >
       <div className="card">
         <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
           Iniciar Sesión
@@ -70,7 +85,13 @@ export default function Login() {
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: "15px" }}>
-            <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "5px",
+                fontWeight: "500",
+              }}
+            >
               Email
             </label>
             <input
@@ -85,7 +106,13 @@ export default function Login() {
           </div>
 
           <div style={{ marginBottom: "15px" }}>
-            <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "5px",
+                fontWeight: "500",
+              }}
+            >
               Contraseña
             </label>
             <input
@@ -123,7 +150,10 @@ export default function Login() {
         >
           <p style={{ margin: 0 }}>
             ¿No tienes cuenta?{" "}
-            <Link to="/register" style={{ color: "#007bff", fontWeight: "bold" }}>
+            <Link
+              to="/register"
+              style={{ color: "#007bff", fontWeight: "bold" }}
+            >
               Regístrate aquí
             </Link>
           </p>

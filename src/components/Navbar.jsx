@@ -2,14 +2,15 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../hooks/useAuth";
+import DashboardAdmin from "../pages/admin/DashboardAdmin";
 
 export default function Navbar() {
   const [q, setQ] = React.useState("");
   const navigate = useNavigate();
-  
+
   const { cart } = useCart();
   const { user, logout } = useAuth();
-  
+
   const count = cart.reduce((sum, item) => sum + item.qty, 0);
 
   function onSubmit(e) {
@@ -22,11 +23,7 @@ export default function Navbar() {
 
   function handleAccountClick(e) {
     e.preventDefault();
-    if (user) {
-      navigate("/user-dashboard");
-    } else {
-      navigate("/login");
-    }
+    navigate(user?.role === "admin" ? "/admin/dashboard" : "/user-dashboard");
   }
 
   function handleLogout() {
@@ -52,19 +49,21 @@ export default function Navbar() {
         </form>
 
         <nav className="nav-links">
-          <Link to="/search">Explorar </Link>
-          
+          <Link to="/search?q=&page=1">Explorar</Link>
+
           <Link to="/cart" id="cart-link">
             Carrito {count > 0 && <span className="badge">{count}</span>}
           </Link>
 
           <a href="#footer">Contacto</a>
 
-          <span style={{ 
-            color: "rgba(255, 255, 255, 0.5)", 
-            margin: "0 10px",
-            userSelect: "none"
-          }}>
+          <span
+            style={{
+              color: "rgba(255, 255, 255, 0.5)",
+              margin: "0 10px",
+              userSelect: "none",
+            }}
+          >
             |
           </span>
 
@@ -73,8 +72,8 @@ export default function Navbar() {
               <a href="#" onClick={handleAccountClick}>
                 Hola, {user.name}
               </a>
-              <button 
-                onClick={handleLogout} 
+              <button
+                onClick={handleLogout}
                 style={{
                   background: "transparent",
                   border: "none",
@@ -83,7 +82,7 @@ export default function Navbar() {
                   padding: "0",
                   fontSize: "inherit",
                   textDecoration: "underline",
-                  marginLeft: "15px"
+                  marginLeft: "15px",
                 }}
               >
                 Cerrar sesión
