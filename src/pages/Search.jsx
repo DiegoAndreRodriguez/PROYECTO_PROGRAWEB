@@ -17,7 +17,7 @@ export default function Search() {
   const page = Math.max(1, parseInt(query.get("page") || "1", 10));
   const pageSize = 12;
 
-  // El filtrado y ordenamiento se mantienen igual...
+  // El filtrado y ordenamiento se mantienen igual
   let filtered = products.filter(p => {
     const matchQ = !q || p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
     const matchCat = !cat || p.category === cat;
@@ -36,12 +36,12 @@ export default function Search() {
   const start = (currentPage - 1) * pageSize;
   const pageItems = filtered.slice(start, start + pageSize);
 
-  // --- ✨ AQUÍ ESTÁ LA CORRECCIÓN ---
+  // Nueva función para actualizar los parámetros de la URL
   function updateParams(newParams) {
-    // 1. Crea una copia de los parámetros actuales usando 'query', que ya existe.
+    //Crea una copia de los parámetros actuales usando 'query', que ya existe.
     const params = new URLSearchParams(query.toString());
 
-    // 2. Itera sobre los nuevos parámetros para actualizar la copia.
+    //Itera sobre los nuevos parámetros para actualizar la copia.
     Object.keys(newParams).forEach(k => {
       if (newParams[k] === null) {
         params.delete(k); // Elimina el parámetro si el valor es null
@@ -50,7 +50,7 @@ export default function Search() {
       }
     });
 
-    // 3. Navega a la nueva URL.
+    //Navega a la nueva URL.
     navigate(`/search?${params.toString()}`);
   }
 

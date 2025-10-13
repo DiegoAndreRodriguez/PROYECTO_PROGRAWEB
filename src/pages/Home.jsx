@@ -1,6 +1,8 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { products, categories } from "../data/products";
 import ProductCard from "../components/ProductCard";
+
 
 export default function Home() {
   const topProducts = [...products].sort((a,b) => b.sold - a.sold).slice(0,12);
@@ -11,11 +13,7 @@ export default function Home() {
     <div className="home">
       <section className="hero">
         <div className="hero-inner container-row">
-          <div>
-            <h1>Tienda de Superpoderes ⚡</h1>
-            <p>Explora habilidades únicas y lleva tu potencial al máximo.</p>
-          </div>
-          <img src="https://via.placeholder.com/400x200?text=Banner+Publicitario" alt="banner" />
+          <img src="/imagenes/banner_bueno.PNG" alt="banner" width={800} style={{ marginLeft: 50 }}/>
         </div>
       </section>
 
@@ -23,10 +21,9 @@ export default function Home() {
         <h2>Categorías destacadas</h2>
         <div className="categories-row">
           {featuredCategories.map((c) => (
-            <div key={c} className="category-card">
+            <Link to={`/search?category=${c}`} key={c} className="category-card">
               <h3>{c}</h3>
-              <p>Explora poderes de {c.toLowerCase()}</p>
-            </div>
+            </Link>
           ))}
         </div>
       </section>

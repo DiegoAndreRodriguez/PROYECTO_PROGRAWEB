@@ -10,6 +10,9 @@ import { AuthProvider } from "./context/AuthContext";
 import CartPage from "./pages/Cart";
 import CheckoutPage from "./pages/Checkout";
 import OrderComplete from "./pages/OrderComplete";
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+import Help from './pages/Help';
 
 // Páginas de autenticación
 import Login from "./pages/Login";
@@ -36,6 +39,9 @@ export default function App() {
               {/* Rutas públicas */}
               <Route path="/" element={<Home />} />
               <Route path="/search" element={<Search />} />
+              <Route path="/terminos" element={<Terms />} />
+              <Route path="/privacidad" element={<Privacy />} />
+              <Route path="/ayuda" element={<Help />} />
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />

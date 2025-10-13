@@ -38,7 +38,7 @@ export default function Navbar() {
     <header className="navbar">
       <div className="nav-inner container-row">
         <Link to="/" className="brand">
-          SuperPowers Store ⚡
+          La Tienda del Multiverso ⚡
         </Link>
 
         <form onSubmit={onSubmit} className="search-form">
