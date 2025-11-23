@@ -134,6 +134,7 @@ function AppRoutes({
             path="/search"
             element={<Search productList={productList} />}
           />
+          
           <Route path="/product/:id" element={<ProductDetail />} />
           
           <Route path="/cart" element={<CartPage />} />
