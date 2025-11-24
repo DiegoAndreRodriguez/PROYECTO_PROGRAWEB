@@ -36,19 +36,8 @@ export default function Login() {
 
     setLoading(true);
 
-    if (email === "admin@gmail.com" && password === "admin123") {
-      const result = login(email, password); // <- pasar los 2 parámetros
-      if (result.success) {
-        navigate("/admin/dashboard");
-      } else {
-        setError(result.error);
-      }
-      setLoading(false);
-      return;
-    }
-
     // Intentar login
-    const result = login(email, password);
+    const result = await login(email, password);
 
     if (result?.success) {
       navigate("/user-dashboard");

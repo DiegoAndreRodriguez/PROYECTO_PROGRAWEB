@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
@@ -7,9 +7,9 @@ export default function Profile() {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    name: user.name,
-    lastName: user.lastName,
-    email: user.email,
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+    email: user?.email || "",
   });
 
   const [error, setError] = useState("");
@@ -27,13 +27,13 @@ export default function Profile() {
 
   function validateForm() {
     // Validar campos vacíos
-    if (!formData.name || !formData.lastName || !formData.email) {
+    if (!formData.firstName || !formData.lastName || !formData.email) {
       setError("Todos los campos son obligatorios");
       return false;
     }
 
     // Validar nombre (mínimo 2 caracteres)
-    if (formData.name.trim().length < 2) {
+    if (formData.firstName.trim().length < 2) {
       setError("El nombre debe tener al menos 2 caracteres");
       return false;
     }
@@ -53,7 +53,7 @@ export default function Profile() {
     return true;
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     setSuccess(false);
@@ -64,32 +64,29 @@ export default function Profile() {
 
     setLoading(true);
 
-    // Simular delay
-    setTimeout(() => {
-      const result = updateProfile(
-        formData.name.trim(),
-        formData.lastName.trim(),
-        formData.email.toLowerCase().trim()
-      );
+    const result = await updateProfile(
+      formData.firstName.trim(),
+      formData.lastName.trim(),
+      formData.email.toLowerCase().trim()
+    );
 
-      if (result.success) {
-        setSuccess(true);
-        setLoading(false);
-        // Redirigir después de 2 segundos
-        setTimeout(() => {
-          navigate("/user-dashboard");
-        }, 2000);
-      } else {
-        setError(result.error);
-        setLoading(false);
-      }
-    }, 500);
+    if (result.success) {
+      setSuccess(true);
+      setLoading(false);
+      // Redirigir después de 2 segundos
+      setTimeout(() => {
+        navigate("/user-dashboard");
+      }, 2000);
+    } else {
+      setError(result.error);
+      setLoading(false);
+    }
   }
 
   const hasChanges =
-    formData.name !== user.name ||
-    formData.lastName !== user.lastName ||
-    formData.email !== user.email;
+    formData.firstName !== user?.firstName ||
+    formData.lastName !== user?.lastName ||
+    formData.email !== user?.email;
 
   return (
     <div className="container" style={{ maxWidth: "600px", margin: "30px auto" }}>
@@ -154,8 +151,8 @@ export default function Profile() {
             </label>
             <input
               type="text"
-              name="name"
-              value={formData.name}
+              name="firstName"
+              value={formData.firstName}
               onChange={handleChange}
               placeholder="Juan"
               autoComplete="given-name"

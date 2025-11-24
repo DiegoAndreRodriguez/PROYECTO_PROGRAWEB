@@ -76,28 +76,27 @@ export default function ChangePassword() {
 
     setLoading(true);
 
-    // Simular delay como si hubiera base de datos
-    setTimeout(() => {
-      const result = changePassword(formData.currentPassword, formData.newPassword);
-
-      if (result.success) {
-        setSuccess(true);
-        setLoading(false);
-        // Limpiar formulario
-        setFormData({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        });
-        // Redirigir después de 2 segundos
-        setTimeout(() => {
-          navigate("/user-dashboard");
-        }, 2000);
-      } else {
-        setError(result.error);
-        setLoading(false);
+    changePassword(formData.currentPassword, formData.newPassword).then(
+      (result) => {
+        if (result.success) {
+          setSuccess(true);
+          setLoading(false);
+          // Limpiar formulario
+          setFormData({
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: "",
+          });
+          // Redirigir después de 2 segundos
+          setTimeout(() => {
+            navigate("/user-dashboard");
+          }, 2000);
+        } else {
+          setError(result.error);
+          setLoading(false);
+        }
       }
-    }, 500);
+    );
   }
 
   return (

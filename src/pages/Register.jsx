@@ -79,35 +79,22 @@ export default function Register() {
     }
 
     setLoading(true);
-    //para apoyar a la gestion de usuarios se agrega localStorage
-    const storedUsers = JSON.parse(localStorage.getItem("usuarios")) || [];
-
-    const newUser = {
-      id: Date.now(), // ID único temporal
-      name: formData.name.trim(),
-      lastName: formData.lastName.trim(),
-      email: formData.email.toLowerCase().trim(),
-      active: true, // Por defecto activo
-    };
-
-    storedUsers.push(newUser);
-    localStorage.setItem("usuarios", JSON.stringify(storedUsers));
 
     // Intentar registro
-    const result = register(
+    register(
       formData.name.trim(),
       formData.lastName.trim(),
       formData.email.toLowerCase().trim(),
       formData.password
-    );
-
-    if (result.success) {
-      // El usuario ya está logueado automáticamente después del registro
-      navigate("/user-dashboard");
-    } else {
-      setError(result.error);
-      setLoading(false);
-    }
+    ).then((result) => {
+      if (result.success) {
+        // El usuario ya está logueado automáticamente después del registro
+        navigate("/user-dashboard");
+      } else {
+        setError(result.error);
+        setLoading(false);
+      }
+    });
   }
 
   return (

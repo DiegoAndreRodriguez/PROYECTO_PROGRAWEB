@@ -70,7 +70,7 @@ export default function Navbar() {
           {user ? (
             <>
               <a href="#" onClick={handleAccountClick}>
-                Hola, {user.name}
+                Hola, {user.firstName}
               </a>
               <button
                 onClick={handleLogout}

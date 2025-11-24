@@ -4,43 +4,42 @@ import { useAuth } from "../hooks/useAuth";
 
 export default function OrderDetail() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, getOrderDetail, cancelOrder } = useAuth();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     // Cargar la orden específica
-    const orders = JSON.parse(localStorage.getItem("orders") || "[]");
-    const foundOrder = orders.find((o) => o.id === id && o.userId === user.id);
+    const loadOrder = async () => {
+      const foundOrder = await getOrderDetail(id);
+      if (foundOrder) {
+        setOrder(foundOrder);
+      }
+      setLoading(false);
+    };
 
-    if (foundOrder) {
-      setOrder(foundOrder);
-    }
-    setLoading(false);
-  }, [id, user.id]);
+    loadOrder();
+  }, [id, getOrderDetail]);
 
-  function handleCancelOrder() {
+  async function handleCancelOrder() {
     if (!confirm("¿Estás seguro de que deseas cancelar esta orden?")) {
       return;
     }
 
     setCancelling(true);
 
-    // Simular delay de cancelación
-    setTimeout(() => {
-      const orders = JSON.parse(localStorage.getItem("orders") || "[]");
-      const orderIndex = orders.findIndex((o) => o.id === id);
+    const result = await cancelOrder(id);
 
-      if (orderIndex !== -1) {
-        orders[orderIndex].status = "cancelled";
-        localStorage.setItem("orders", JSON.stringify(orders));
-        setOrder({ ...order, status: "cancelled" });
-      }
-
-      setCancelling(false);
+    if (result.success) {
+      // Actualizar el estado de la orden
+      setOrder({ ...order, status: "cancelled" });
       alert("Orden cancelada exitosamente");
-    }, 1000);
+    } else {
+      alert(result.error || "Error al cancelar la orden");
+    }
+
+    setCancelling(false);
   }
 
   function getStatusBadge(status) {
@@ -116,7 +115,7 @@ export default function OrderDetail() {
     );
   }
 
-  const canCancel = order.status === "pending" || order.status === "processing";
+  const canCancel = order.status === "pending";
 
   return (
     <div className="container" style={{ maxWidth: "900px", margin: "30px auto" }}>
@@ -149,8 +148,12 @@ export default function OrderDetail() {
         <div style={{ marginBottom: "30px" }}>
           <h3 style={{ marginBottom: "15px" }}>Información del Cliente</h3>
           <div style={{ background: "#f8f9fa", padding: "15px", borderRadius: "8px" }}>
-            <p style={{ margin: "5px 0" }}><strong>Nombre:</strong> {order.customer.name}</p>
-            <p style={{ margin: "5px 0" }}><strong>Email:</strong> {order.customer.email}</p>
+            <p style={{ margin: "5px 0" }}>
+              <strong>Nombre:</strong> {user?.firstName} {user?.lastName}
+            </p>
+            <p style={{ margin: "5px 0" }}>
+              <strong>Email:</strong> {user?.email}
+            </p>
           </div>
         </div>
 
@@ -158,13 +161,7 @@ export default function OrderDetail() {
         <div style={{ marginBottom: "30px" }}>
           <h3 style={{ marginBottom: "15px" }}>Dirección de Envío</h3>
           <div style={{ background: "#f8f9fa", padding: "15px", borderRadius: "8px" }}>
-            <p style={{ margin: "5px 0" }}>{order.shipping.address}</p>
-            <p style={{ margin: "5px 0" }}>
-              {order.shipping.city}, {order.shipping.postal}
-            </p>
-            {order.shipping.country && (
-              <p style={{ margin: "5px 0" }}>{order.shipping.country}</p>
-            )}
+            <p style={{ margin: "5px 0" }}>{order.shippingAddress}</p>
             <p style={{ margin: "10px 0 5px 0" }}>
               <strong>Método de envío:</strong>{" "}
               {order.shippingMethod === "express" ? "Express" : "Estándar"}
@@ -212,28 +209,19 @@ export default function OrderDetail() {
           <h3 style={{ marginBottom: "15px" }}>Resumen de Pago</h3>
           <div style={{ background: "#f8f9fa", padding: "15px", borderRadius: "8px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-              <span>Subtotal:</span>
-              <span>${order.subtotal.toFixed(2)}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-              <span>Envío:</span>
-              <span>${order.shippingCost.toFixed(2)}</span>
+              <span>Total:</span>
+              <span>${order.totalAmount.toFixed(2)}</span>
             </div>
             <hr style={{ margin: "12px 0" }} />
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "18px" }}>
               <strong>Total:</strong>
-              <strong>${order.total.toFixed(2)}</strong>
+              <strong>${order.totalAmount.toFixed(2)}</strong>
             </div>
             <div style={{ marginTop: "15px", paddingTop: "15px", borderTop: "1px solid #dee2e6" }}>
               <p style={{ margin: 0, fontSize: "14px" }}>
                 <strong>Método de pago:</strong>{" "}
-                {order.payment.method === "qr" ? "Código QR" : "Tarjeta"}
+                {order.paymentMethod === "qr" ? "Código QR" : "Tarjeta de Crédito"}
               </p>
-              {order.payment.card && (
-                <p style={{ margin: "5px 0 0 0", fontSize: "14px" }}>
-                  {order.payment.card.number}
-                </p>
-              )}
             </div>
           </div>
         </div>

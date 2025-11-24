@@ -29,10 +29,7 @@ export default function ForgotPassword() {
 
     setLoading(true);
 
-    // Simular delay de envío de email
-    setTimeout(() => {
-      const result = recoverPassword(email.toLowerCase().trim());
-
+    recoverPassword(email.toLowerCase().trim()).then((result) => {
       if (result.success) {
         setSuccess(true);
         setLoading(false);
@@ -40,7 +37,7 @@ export default function ForgotPassword() {
         setError(result.error);
         setLoading(false);
       }
-    }, 1000);
+    });
   }
 
   return (

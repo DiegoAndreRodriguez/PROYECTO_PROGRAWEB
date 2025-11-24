@@ -6,23 +6,25 @@ export default function UserDashboard() {
   const { user, getUserOrders } = useAuth();
   const [orders, setOrders] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
   const ordersPerPage = 5;
 
   useEffect(() => {
     // Cargar órdenes del usuario
-    const userOrders = getUserOrders();
-    // Ordenar por fecha más reciente primero
-    const sortedOrders = userOrders.sort((a, b) => 
-      new Date(b.date) - new Date(a.date)
-    );
-    setOrders(sortedOrders);
-  }, [getUserOrders]);
+    const loadOrders = async () => {
+      const result = await getUserOrders(currentPage, ordersPerPage);
+      if (result.orders) {
+        setOrders(result.orders);
+        if (result.pagination) {
+          setTotalPages(result.pagination.totalPages);
+        }
+      }
+      setLoading(false);
+    };
 
-  // Calcular paginación
-  const indexOfLastOrder = currentPage * ordersPerPage;
-  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
-  const totalPages = Math.ceil(orders.length / ordersPerPage);
+    loadOrders();
+  }, [currentPage, getUserOrders]);
 
   function getStatusBadge(status) {
     const statusConfig = {
@@ -68,7 +70,7 @@ export default function UserDashboard() {
       <div className="card">
         <div style={{ marginBottom: "30px" }}>
           <h2 style={{ marginBottom: "10px" }}>
-            Bienvenido, {user.name} {user.lastName}
+            Bienvenido, {user?.firstName} {user?.lastName}
           </h2>
           <p style={{ color: "#666", margin: 0 }}>
             Administra tus órdenes y datos personales
@@ -128,7 +130,18 @@ export default function UserDashboard() {
         {/* Lista de órdenes */}
         <h3 style={{ marginBottom: "20px" }}>Órdenes Recientes</h3>
 
-        {orders.length === 0 ? (
+        {loading ? (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "50px 20px",
+              background: "#f8f9fa",
+              borderRadius: "8px",
+            }}
+          >
+            Cargando órdenes...
+          </div>
+        ) : orders.length === 0 ? (
           <div
             style={{
               textAlign: "center",
@@ -177,13 +190,13 @@ export default function UserDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentOrders.map((order) => (
+                  {orders.map((order) => (
                     <tr
                       key={order.id}
                       style={{ borderBottom: "1px solid #eee" }}
                     >
                       <td style={{ padding: "12px" }}>
-                        <strong>#{order.id.slice(-8)}</strong>
+                        <strong>#{order.id}</strong>
                       </td>
                       <td style={{ padding: "12px", fontSize: "14px" }}>
                         {formatDate(order.date)}
