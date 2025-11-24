@@ -1,146 +1,138 @@
-import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { products, categories } from "../data/products";
-import ProductCard from "../components/ProductCard";
+// c:\Users\Lenovo\Downloads\Trabajo final PrograWeb\Frontend\src\pages\Search.jsx
 
-// Tu custom hook se mantiene igual
+import React, { useState, useEffect, useMemo } from 'react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import ProductCard from '../components/ProductCard';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const PRODUCTS_PER_PAGE = 12;
+
+// Hook personalizado para leer los parámetros de la URL
 function useQuery() {
-  return new URLSearchParams(useLocation().search);
+    return new URLSearchParams(useLocation().search);
 }
 
-export default function Search({ productList }) {
-  const query = useQuery();
-  const navigate = useNavigate();
-  const q = (query.get("q") || "").toLowerCase();
-  const cat = query.get("category") || "";
-  const sort = query.get("sort") || "relevance";
-  const page = Math.max(1, parseInt(query.get("page") || "1", 10));
-  const pageSize = 12;
+export default function SearchPage() {
+    const [allProducts, setAllProducts] = useState([]);
+    const [allCategories, setAllCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-  // El filtrado y ordenamiento se mantienen igual
-  let filtered = productList
-    .filter((p) => p.active)
-    .filter((p) => {
-      const matchQ =
-        !q ||
-        p.name.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q);
-      const matchCat = !cat || p.category === cat;
-      return matchQ && matchCat;
-    });
+    const navigate = useNavigate();
+    const query = useQuery();
+    const searchTerm = query.get('q') || '';
+    const currentCategory = query.get('category') || '';
+    const currentPage = parseInt(query.get('page') || '1', 10);
 
-  if (sort === "price_asc") filtered.sort((a, b) => a.price - b.price);
-  else if (sort === "price_desc") filtered.sort((a, b) => b.price - a.price);
-  else if (sort === "name_asc")
-    filtered.sort((a, b) => a.name.localeCompare(b.name));
-  else if (sort === "name_desc")
-    filtered.sort((a, b) => b.name.localeCompare(a.name));
-  else filtered.sort((a, b) => b.sold - a.sold);
+    // 1. Obtener todos los datos de la API al cargar la página
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                const [productsResponse, categoriesResponse] = await Promise.all([
+                    fetch(`${API_BASE_URL}/api/products`),
+                    fetch(`${API_BASE_URL}/api/categories`),
+                ]);
 
-  const total = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const start = (currentPage - 1) * pageSize;
-  const pageItems = filtered.slice(start, start + pageSize);
+                if (!productsResponse.ok || !categoriesResponse.ok) {
+                    throw new Error('No se pudieron cargar los datos del servidor.');
+                }
 
-  // Nueva función para actualizar los parámetros de la URL
-  function updateParams(newParams) {
-    //Crea una copia de los parámetros actuales usando 'query', que ya existe.
-    const params = new URLSearchParams(query.toString());
+                const productsData = await productsResponse.json();
+                const categoriesData = await categoriesResponse.json();
 
-    //Itera sobre los nuevos parámetros para actualizar la copia.
-    Object.keys(newParams).forEach((k) => {
-      if (newParams[k] === null) {
-        params.delete(k); // Elimina el parámetro si el valor es null
-      } else {
-        params.set(k, newParams[k]); // Añade o actualiza el parámetro
-      }
-    });
+                setAllProducts(productsData);
+                setAllCategories(categoriesData);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchData();
+    }, []);
 
-    //Navega a la nueva URL.
-    navigate(`/search?${params.toString()}`);
-  }
+    // 2. Filtrar los productos cada vez que cambien los parámetros de búsqueda
+    const filteredProducts = useMemo(() => {
+        return allProducts.filter(product => {
+            const matchesCategory = !currentCategory || product.category === currentCategory;
+            const matchesSearch = !searchTerm || product.name.toLowerCase().includes(searchTerm.toLowerCase());
+            return matchesCategory && matchesSearch;
+        });
+    }, [allProducts, searchTerm, currentCategory]);
 
-  return (
-    // El resto de tu JSX se mantiene exactamente igual.
-    <div className="search-page container">
-      <div className="search-controls container-row">
-        <div>
-          <strong>Resultados:</strong> {total}
+    // 3. Calcular la paginación sobre los productos filtrados
+    const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
+    const paginatedProducts = filteredProducts.slice(
+        (currentPage - 1) * PRODUCTS_PER_PAGE,
+        currentPage * PRODUCTS_PER_PAGE
+    );
+
+    // Función para manejar cambios en los filtros y actualizar la URL
+    const handleFilterChange = (newCategory) => {
+        const newQuery = new URLSearchParams();
+        if (searchTerm) newQuery.set('q', searchTerm);
+        if (newCategory) newQuery.set('category', newCategory);
+        newQuery.set('page', '1'); // Resetear a la página 1
+        navigate(`/search?${newQuery.toString()}`);
+    };
+
+    if (loading) return <div className="container">Cargando productos...</div>;
+    if (error) return <div className="container error-message">{error}</div>;
+
+    return (
+        <div className="container search-page">
+            <div className="search-layout">
+                <aside className="filters-sidebar">
+                    <h3>Categorías</h3>
+                    <ul>
+                        <li className={!currentCategory ? 'active' : ''}>
+                            <a href="#" onClick={(e) => { e.preventDefault(); handleFilterChange(''); }}>
+                                Todas
+                            </a>
+                        </li>
+                        {allCategories.map(cat => (
+                            <li key={cat.id} className={currentCategory === cat.name ? 'active' : ''}>
+                                <a href="#" onClick={(e) => { e.preventDefault(); handleFilterChange(cat.name); }}>
+                                    {cat.name}
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
+                </aside>
+                <main className="results-content">
+                    <h2>
+                        {searchTerm 
+                            ? `Resultados para "${searchTerm}"` 
+                            : 'Explorar todos los poderes'
+                        }
+                    </h2>
+                    {paginatedProducts.length > 0 ? (
+                        <>
+                            <div className="grid">
+                                {paginatedProducts.map(p => (
+                                    <ProductCard key={p.id} product={p} />
+                                ))}
+                            </div>
+                            {/* Paginación */}
+                            {totalPages > 1 && (
+                                <div className="pagination">
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                        <Link
+                                            key={page}
+                                            to={`/search?q=${searchTerm}&category=${currentCategory}&page=${page}`}
+                                            className={currentPage === page ? 'active' : ''}
+                                        >
+                                            {page}
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <p>No se encontraron productos que coincidan con tu búsqueda.</p>
+                    )}
+                </main>
+            </div>
         </div>
-        <div className="controls-right">
-          <label>
-            Ordenar:
-            <select
-              value={sort}
-              onChange={(e) => updateParams({ sort: e.target.value, page: 1 })}
-            >
-              <option value="relevance">Más vendidos</option>
-              <option value="price_asc">Precio ↑</option>
-              <option value="price_desc">Precio ↓</option>
-              <option value="name_asc">Nombre A-Z</option>
-              <option value="name_desc">Nombre Z-A</option>
-            </select>
-          </label>
-        </div>
-      </div>
-
-      <div className="search-body">
-        <aside className="sidebar">
-          <h4>Categorías</h4>
-          <ul>
-            <li>
-              <button
-                className={!cat ? "active" : ""}
-                onClick={() => updateParams({ category: null, page: 1 })}
-              >
-                Todas
-              </button>
-            </li>
-            {categories.map((c) => (
-              <li key={c}>
-                <button
-                  className={cat === c ? "active" : ""}
-                  onClick={() => updateParams({ category: c, page: 1 })}
-                >
-                  {c}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </aside>
-
-        <section className="results">
-          <div className="grid">
-            {pageItems.length > 0 ? (
-              pageItems.map((p) => <ProductCard key={p.id} product={p} />)
-            ) : (
-              <p style={{ textAlign: "center", width: "100%" }}>
-                No se encontraron productos disponibles.
-              </p>
-            )}
-          </div>
-
-          <div className="pagination">
-            <button
-              disabled={currentPage <= 1}
-              onClick={() => updateParams({ page: currentPage - 1 })}
-            >
-              « Anterior
-            </button>
-            <span>
-              {" "}
-              Página {currentPage} de {totalPages}{" "}
-            </span>
-            <button
-              disabled={currentPage >= totalPages}
-              onClick={() => updateParams({ page: currentPage + 1 })}
-            >
-              Siguiente »
-            </button>
-          </div>
-        </section>
-      </div>
-    </div>
-  );
+    );
 }

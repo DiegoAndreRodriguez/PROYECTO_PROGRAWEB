@@ -132,7 +132,7 @@ export default function OrderDetail() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "15px" }}>
             <div>
               <h2 style={{ marginBottom: "5px" }}>
-                Orden #{order.id.slice(-8)}
+                Orden #{String(order.id).slice(-8)}
               </h2>
               <p style={{ color: "#666", margin: 0 }}>
                 Realizada el {formatDate(order.date)}

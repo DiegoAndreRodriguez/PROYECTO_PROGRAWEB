@@ -247,7 +247,7 @@ export function AuthProvider({ children }) {
       return {
         orders: data.orders.map((order) => ({
           id: order.id,
-          total: order.totalAmount,
+          total: parseFloat(order.totalAmount), // Convertimos el string a número
           status: order.status,
           date: order.createdAt,
           paymentMethod: order.paymentMethod,
@@ -279,7 +279,7 @@ export function AuthProvider({ children }) {
       const data = await response.json();
       return {
         id: data.id,
-        totalAmount: data.totalAmount,
+        totalAmount: parseFloat(data.totalAmount), // Convertimos el total a número
         status: data.status,
         paymentMethod: data.paymentMethod,
         shippingAddress: data.shippingAddress,
@@ -288,7 +288,8 @@ export function AuthProvider({ children }) {
           id: item.id,
           name: item.productName,
           qty: item.quantity,
-          price: item.unitPrice,
+          image: item.productImage, // Añadimos la imagen para mostrarla en el detalle
+          price: parseFloat(item.unitPrice), // Convertimos el precio unitario a número
         })),
         createdAt: data.createdAt,
       };

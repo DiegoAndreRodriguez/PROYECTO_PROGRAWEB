@@ -1,124 +1,96 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const CartContext = createContext();
 
-const CART_KEY = "pw_cart";
-const SAVED_KEY = "pw_saved";
-const ORDERS_KEY = "pw_orders";
-const LAST_ORDER_KEY = "pw_last_order_id";
+export const useCart = () => useContext(CartContext);
 
-// La función 'read' se mantiene igual
-function read(key){
-  try{
-    return JSON.parse(localStorage.getItem(key) || "[]");
-  } catch(e) {
-    return [];
-  }
-}
+const getInitialState = (key, defaultValue) => {
+    try {
+        const item = window.localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultValue;
+    } catch (error) {
+        console.error(`Error reading localStorage key “${key}”:`, error);
+        return defaultValue;
+    }
+};
 
-export function CartProvider({children}){
-  // Se inicializa el estado leyendo de localStorage UNA SOLA VEZ
-  const [cart, setCart] = useState(() => read(CART_KEY));
-  const [saved, setSaved] = useState(() => read(SAVED_KEY));
+export const CartProvider = ({ children }) => {
+    const [cartItems, setCartItems] = useState(() => getInitialState('cartItems', []));
+    const [savedForLater, setSavedForLater] = useState(() => getInitialState('savedForLater', []));
 
-  // 1. ELIMINAMOS el useEffect que escuchaba el evento "cart_updated".
-  //    Era el causante del bucle infinito.
+    useEffect(() => {
+        window.localStorage.setItem('cartItems', JSON.stringify(cartItems));
+    }, [cartItems]);
 
-  // 2. REEMPLAZAMOS los useEffect que usaban 'write' por una versión más directa.
-  //    Ahora, solo escriben en localStorage cuando 'cart' o 'saved' cambian.
-  useEffect(() => {
-    localStorage.setItem(CART_KEY, JSON.stringify(cart));
-  }, [cart]);
+    useEffect(() => {
+        window.localStorage.setItem('savedForLater', JSON.stringify(savedForLater));
+    }, [savedForLater]);
 
-  useEffect(() => {
-    localStorage.setItem(SAVED_KEY, JSON.stringify(saved));
-  }, [saved]);
-
-  function addItem(product, qty=1){
-    setCart(prev => {
-      const found = prev.find(p=>p.id===product.id);
-      if(found){
-        return prev.map(p => p.id===product.id ? {...p, qty: p.qty + qty} : p);
-      } else {
-        return [...prev, {...product, qty}];
-      }
-    });
-  }
-
-  function updateQty(id, qty){
-    if(qty<=0) return removeItem(id);
-    setCart(prev => prev.map(p => p.id===id ? {...p, qty} : p));
-  }
-
-  function removeItem(id){
-    setCart(prev => prev.filter(p => p.id!==id));
-  }
-
-  function saveForLater(id){
-    setCart(prev => {
-      const item = prev.find(p=>p.id===id);
-      if(!item) return prev;
-      setSaved(s => {
-        if(s.find(x=>x.id===id)) return s;
-        return [...s, {...item}];
-      });
-      return prev.filter(p=>p.id!==id);
-    });
-  }
-
-  function moveToCartFromSaved(id){
-    const item = read(SAVED_KEY).find(p=>p.id===id);
-    if(!item) return;
-    addItem(item, item.qty || 1);
-    setSaved(s => s.filter(p=>p.id!==id));
-  }
-
-  function removeSaved(id){
-    setSaved(s => s.filter(p => p.id!==id));
-  }
-
-  function clearCart(){
-    setCart([]);
-  }
-
-  function placeOrder({customer, shipping, payment, shippingMethod}){
-    const orders = read(ORDERS_KEY);
-    const orderId = Date.now().toString(36);
-    const order = {
-      id: orderId,
-      createdAt: new Date().toISOString(),
-      customer,
-      shipping,
-      payment,
-      shippingMethod,
-      items: cart,
-      totals: {
-        subtotal: cart.reduce((s,i)=>s + (i.price * (i.qty||1)),0),
-        shipping: shippingMethod==="express" ? 10 : 5,
-      },
-      status: "created"
+    const addItem = (product, quantity) => {
+        setCartItems(prevItems => {
+            const existingItem = prevItems.find(item => item.id === product.id);
+            if (existingItem) {
+                return prevItems.map(item =>
+                    item.id === product.id
+                        ? { ...item, quantity: item.quantity + quantity }
+                        : item
+                );
+            }
+            return [...prevItems, { ...product, quantity }];
+        });
     };
-    order.totals.total = order.totals.subtotal + order.totals.shipping;
-    orders.push(order);
-    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-    localStorage.setItem(LAST_ORDER_KEY, orderId);
-    clearCart();
-    // 3. ELIMINAMOS el dispatchEvent de aquí también.
-    //    clearCart() ya actualiza el estado, y los componentes serán notificados por React.
-    return orderId;
-  }
 
-  return (
-    <CartContext.Provider value={{
-      cart, saved,
-      addItem, updateQty, removeItem, saveForLater, moveToCartFromSaved, removeSaved,
-      placeOrder, clearCart
-    }}>
-      {children}
-    </CartContext.Provider>
-  );
-}
+    const removeItem = (productId) => {
+        setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
+    };
 
-export function useCart(){
-  return useContext(CartContext);
-}
+    const updateItemQuantity = (productId, quantity) => {
+        if (quantity <= 0) {
+            removeItem(productId);
+            return;
+        }
+        setCartItems(prevItems =>
+            prevItems.map(item =>
+                item.id === productId ? { ...item, quantity } : item
+            )
+        );
+    };
+
+    const moveToSavedForLater = (productId) => {
+        const itemToMove = cartItems.find(item => item.id === productId);
+        if (itemToMove) {
+            setSavedForLater(prev => [...prev, itemToMove]);
+            removeItem(productId);
+        }
+    };
+
+    const moveToCart = (productId) => {
+        const itemToMove = savedForLater.find(item => item.id === productId);
+        if (itemToMove) {
+            addItem(itemToMove, itemToMove.quantity);
+            setSavedForLater(prev => prev.filter(item => item.id !== productId));
+        }
+    };
+
+    const clearCart = () => {
+        setCartItems([]);
+    };
+
+    const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
+    const cartTotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+
+    const value = {
+        cartItems,
+        savedForLater,
+        addItem,
+        removeItem,
+        updateItemQuantity,
+        moveToSavedForLater,
+        moveToCart,
+        clearCart,
+        cartCount,
+        cartTotal,
+    };
+
+    return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+};

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useCart } from "../context/CartContext";
+import { useCart } from '../context/CartContext';
 import { useAuth } from "../hooks/useAuth";
 import DashboardAdmin from "../pages/admin/DashboardAdmin";
 
@@ -8,10 +8,10 @@ export default function Navbar() {
   const [q, setQ] = React.useState("");
   const navigate = useNavigate();
 
-  const { cart } = useCart();
+  const { cartItems, cartCount } = useCart(); // Corregido: usamos cartItems y el cartCount ya calculado
   const { user, logout } = useAuth();
 
-  const count = cart.reduce((sum, item) => sum + item.qty, 0);
+  // Ya no necesitamos calcular 'count' aquí, usamos 'cartCount' del contexto.
 
   function onSubmit(e) {
     e.preventDefault();
@@ -52,7 +52,7 @@ export default function Navbar() {
           <Link to="/search?q=&page=1">Explorar</Link>
 
           <Link to="/cart" id="cart-link">
-            Carrito {count > 0 && <span className="badge">{count}</span>}
+            Carrito {cartCount > 0 && <span className="badge">{cartCount}</span>}
           </Link>
 
           <a href="#footer">Contacto</a>

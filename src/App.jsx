@@ -7,20 +7,17 @@ import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // Contextos y Hooks
-import { CartProvider } from "./context/CartContext";
-import { AuthProvider } from "./context/AuthContext";
-import { useAuth } from "./hooks/useAuth";
-
 // Páginas Públicas
 import Home from "./pages/Home";
 import Search from "./pages/Search";
 import ProductDetail from "./pages/ProductDetail";
-import CartPage from "./pages/Cart";
-import CheckoutPage from "./pages/Checkout";
-import OrderComplete from "./pages/OrderComplete";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Help from "./pages/Help";
+
+import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
+import OrderConfirmationPage from './pages/OrderConfirmation';
 
 // Páginas de Autenticación
 import Login from "./pages/Login";
@@ -60,7 +57,8 @@ export default function App() {
         const resProd = await fetch(`${apiUrl}/api/products`);
         if (resProd.ok) {
           const dataProd = await resProd.json();
-          setProductList(dataProd);
+          // Normalizar id: usar `id` si existe, sino `_id` (compatibilidad con backend)
+          setProductList(dataProd.map(p => ({ ...p, id: p.id ?? p._id })));
         } else {
           console.error("Error cargando productos:", resProd.status);
         }
@@ -69,7 +67,7 @@ export default function App() {
         const resCat = await fetch(`${apiUrl}/api/categories`);
         if (resCat.ok) {
           const dataCat = await resCat.json();
-          setCategoryList(dataCat);
+          setCategoryList(dataCat.map(c => ({ ...c, id: c.id ?? c._id })));
         } else {
           console.error("Error cargando categorías:", resCat.status);
         }
@@ -87,7 +85,7 @@ export default function App() {
   // Función para activar/desactivar (Mantenida localmente por ahora para la UI)
   const toggleActive = (id) => {
     setProductList(prev => 
-      prev.map(p => p.id === id ? { ...p, active: !p.active } : p)
+      prev.map(p => (p.id === id || p._id === id) ? { ...p, active: !p.active } : p)
     );
   };
 
@@ -102,45 +100,16 @@ export default function App() {
 
   return (
     <div className="app">
-      <AuthProvider>
-        <AppRoutes
-          productList={productList}
-          setProductList={setProductList}
-          toggleActive={toggleActive}
-          categoryList={categoryList}
-          setCategoryList={setCategoryList}
-        />
-      </AuthProvider>
-    </div>
-  );
-}
-
-function AppRoutes({
-  productList,
-  setProductList,
-  toggleActive,
-  categoryList,
-  setCategoryList,
-}) {
-  const { user } = useAuth();
-
-  return (
-    <CartProvider>
       <Navbar />
       <main className="container">
         <Routes>
           {/* 🌍 Rutas públicas */}
           <Route path="/" element={<Home productList={productList} />} />
-          <Route
-            path="/search"
-            element={<Search productList={productList} />}
-          />
-          
-          <Route path="/product/:id" element={<ProductDetail />} />
-          
+          <Route path="/search" element={<Search productList={productList} />} />
+          <Route path="/product/:id" element={<ProductDetail productList={productList} categoryList={categoryList} />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/order-complete" element={<OrderComplete />} />
+          <Route path="/order-confirmation/:orderId" element={<OrderConfirmationPage />} />
           <Route path="/terminos" element={<Terms />} />
           <Route path="/privacidad" element={<Privacy />} />
           <Route path="/ayuda" element={<Help />} />
@@ -152,73 +121,30 @@ function AppRoutes({
           <Route path="/reset-password/:token" element={<ResetPassword />} />
 
           {/* 👤 Usuario logueado */}
-          <Route
-            path="/user-dashboard"
-            element={
-              <ProtectedRoute>
-                <UserDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/orders/:id"
-            element={
-              <ProtectedRoute>
-                <OrderDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/change-password"
-            element={
-              <ProtectedRoute>
-                <ChangePassword />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/user-dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
+          <Route path="/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
 
           {/* 🛡️ Panel de administrador */}
-          {user && user.role === "admin" ? (
-            <>
-              <Route path="/admin/dashboard" element={<DashboardAdmin />} />
-              <Route
-                path="/admin/productos"
-                element={
-                  <ProductosAdmin
-                    productList={productList}
-                    setProductList={setProductList}
-                    toggleActive={toggleActive}
-                    categoryList={categoryList}
-                  />
-                }
-              />
-              <Route
-                path="/admin/categorias"
-                element={
-                  <CategoriasAdmin
-                    categoryList={categoryList}
-                    setCategoryList={setCategoryList}
-                    productList={productList}
-                  />
-                }
-              />
-              <Route path="/admin/gestionar-usuarios" element={<UserManagement />} />
-              <Route path="/admin/orders-management" element={<OrdersManagement />} />
-            </>
-          ) : (
-            <Route path="/admin/*" element={<Navigate to="/login" replace />} />
-          )}
+          <Route
+            path="/admin/*"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <Routes>
+                  <Route path="dashboard" element={<DashboardAdmin />} />
+                  <Route path="productos" element={<ProductosAdmin productList={productList} setProductList={setProductList} toggleActive={toggleActive} categoryList={categoryList} />} />
+                  <Route path="categorias" element={<CategoriasAdmin categoryList={categoryList} setCategoryList={setCategoryList} productList={productList} />} />
+                  <Route path="gestionar-usuarios" element={<UserManagement />} />
+                  <Route path="orders-management" element={<OrdersManagement />} />
+                  <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+                </Routes>
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </main>
       <Footer />
-    </CartProvider>
+    </div>
   );
 }
