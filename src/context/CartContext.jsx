@@ -1,96 +1,74 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { useAuth } from "../hooks/useAuth"; // Importamos auth para sacar el ID del usuario
 
 const CartContext = createContext();
+const CART_KEY = "pw_cart";
 
-export const useCart = () => useContext(CartContext);
+export function CartProvider({ children }) {
+    const [cart, setCart] = useState(() => {
+        try { return JSON.parse(localStorage.getItem(CART_KEY) || "[]"); }
+        catch (e) { return []; }
+    });
 
-const getInitialState = (key, defaultValue) => {
-    try {
-        const item = window.localStorage.getItem(key);
-        return item ? JSON.parse(item) : defaultValue;
-    } catch (error) {
-        console.error(`Error reading localStorage key “${key}”:`, error);
-        return defaultValue;
-    }
-};
-
-export const CartProvider = ({ children }) => {
-    const [cartItems, setCartItems] = useState(() => getInitialState('cartItems', []));
-    const [savedForLater, setSavedForLater] = useState(() => getInitialState('savedForLater', []));
+    const { user } = useAuth(); // Obtenemos el usuario logueado
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
     useEffect(() => {
-        window.localStorage.setItem('cartItems', JSON.stringify(cartItems));
-    }, [cartItems]);
+        localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    }, [cart]);
 
-    useEffect(() => {
-        window.localStorage.setItem('savedForLater', JSON.stringify(savedForLater));
-    }, [savedForLater]);
-
-    const addItem = (product, quantity) => {
-        setCartItems(prevItems => {
-            const existingItem = prevItems.find(item => item.id === product.id);
-            if (existingItem) {
-                return prevItems.map(item =>
-                    item.id === product.id
-                        ? { ...item, quantity: item.quantity + quantity }
-                        : item
-                );
-            }
-            return [...prevItems, { ...product, quantity }];
+    function addItem(product, qty = 1) {
+        setCart(prev => {
+            const found = prev.find(p => p.id === product.id);
+            if (found) return prev.map(p => p.id === product.id ? { ...p, qty: p.qty + qty } : p);
+            return [...prev, { ...product, qty }];
         });
-    };
+    }
 
-    const removeItem = (productId) => {
-        setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
-    };
+    function removeItem(id) {
+        setCart(prev => prev.filter(p => p.id !== id));
+    }
 
-    const updateItemQuantity = (productId, quantity) => {
-        if (quantity <= 0) {
-            removeItem(productId);
-            return;
+    function clearCart() {
+        setCart([]);
+    }
+
+    // --- FUNCIÓN DE CHECKOUT CONECTADA AL BACKEND ---
+    async function placeOrder({ customer, shipping, payment }) {
+        // Calcular total
+        const total = cart.reduce((acc, item) => acc + (Number(item.price) * item.qty), 0);
+
+        try {
+            const res = await fetch(`${API_URL}/api/orders`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId: user ? user.id : null, // Enviamos ID si está logueado
+                    customer,
+                    shipping,
+                    payment,
+                    items: cart,
+                    total: total
+                }),
+            });
+
+            if (!res.ok) throw new Error("Error en el servidor");
+
+            const data = await res.json();
+            clearCart(); // Limpiar carrito tras éxito
+            return data.orderId;
+
+        } catch (error) {
+            console.error("Error checkout:", error);
+            throw error; // Para que el componente muestre el error
         }
-        setCartItems(prevItems =>
-            prevItems.map(item =>
-                item.id === productId ? { ...item, quantity } : item
-            )
-        );
-    };
+    }
 
-    const moveToSavedForLater = (productId) => {
-        const itemToMove = cartItems.find(item => item.id === productId);
-        if (itemToMove) {
-            setSavedForLater(prev => [...prev, itemToMove]);
-            removeItem(productId);
-        }
-    };
+    return (
+        <CartContext.Provider value={{ cart, addItem, removeItem, clearCart, placeOrder }}>
+            {children}
+        </CartContext.Provider>
+    );
+}
 
-    const moveToCart = (productId) => {
-        const itemToMove = savedForLater.find(item => item.id === productId);
-        if (itemToMove) {
-            addItem(itemToMove, itemToMove.quantity);
-            setSavedForLater(prev => prev.filter(item => item.id !== productId));
-        }
-    };
-
-    const clearCart = () => {
-        setCartItems([]);
-    };
-
-    const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
-    const cartTotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
-
-    const value = {
-        cartItems,
-        savedForLater,
-        addItem,
-        removeItem,
-        updateItemQuantity,
-        moveToSavedForLater,
-        moveToCart,
-        clearCart,
-        cartCount,
-        cartTotal,
-    };
-
-    return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
-};
+export function useCart() { return useContext(CartContext); }
