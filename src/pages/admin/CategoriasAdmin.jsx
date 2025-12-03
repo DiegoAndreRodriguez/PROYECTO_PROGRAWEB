@@ -1,45 +1,87 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-export default function CategoriasAdmin({
-  categoryList,
-  setCategoryList,
-  productList,
-}) {
+export default function CategoriasAdmin({ productList }) {
+  const [categoryList, setCategoryList] = useState([]);
   const [editingCategory, setEditingCategory] = useState(null);
-  const [newCategory, setNewCategory] = useState({
-    name: "",
-    products: [],
-  });
+  const [newCategory, setNewCategory] = useState({ name: "", products: [] });
   const [modalOpen, setModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
 
+  // ------------------------------------------------------------
+  // GET CATEGORIES (BACKEND)
+  // ------------------------------------------------------------
+  const loadCategories = async () => {
+    try {
+      const res = await fetch("http://localhost:3000/api/categories");
+      const data = await res.json();
+
+      const formatted = data.map((c) => ({ ...c, products: c.products || [] }));
+      setCategoryList(formatted);
+    } catch (err) {
+      console.error("Error al cargar categorías", err);
+    }
+  };
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  // ------------------------------------------------------------
+  // EDITAR CATEGORÍA
+  // ------------------------------------------------------------
   const handleEdit = (cat) => {
     setEditingCategory({ ...cat });
   };
 
-  const handleSaveEdit = () => {
-    setCategoryList((prev) =>
-      prev.map((c) => (c.id === editingCategory.id ? editingCategory : c))
-    );
-    setEditingCategory(null);
+  const handleSaveEdit = async () => {
+    try {
+      const res = await fetch(
+        `http://localhost:3000/api/categories/${editingCategory.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(editingCategory),
+        }
+      );
+
+      if (!res.ok) return alert("Error al actualizar categoría");
+
+      setCategoryList((prev) =>
+        prev.map((c) => (c.id === editingCategory.id ? editingCategory : c))
+      );
+      setEditingCategory(null);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
+  // ---------------- AGREGAR CATEGORÍA ----------------
   const handleAddCategory = () => {
-    // Validar que el nombre no esté vacío
     if (!newCategory.name.trim()) {
-      alert("Por favor, ingresa un nombre para la categoría");
-      return;
+      return alert("Ingresa un nombre para la categoría");
     }
 
-    const nextId =
-      categoryList.length > 0
-        ? Math.max(...categoryList.map((c) => c.id)) + 1
-        : 1;
+    // Calculamos el nuevo ID sumando 1 al último ID de categoryList
+    const lastId = categoryList.length
+      ? Math.max(...categoryList.map((c) => c.id))
+      : 0;
 
-    setCategoryList([...categoryList, { id: nextId, ...newCategory }]);
+    const newCat = {
+      id: lastId + 1, // Nuevo ID
+      name: newCategory.name, // Nombre ingresado
+      products: [...newCategory.products], // Productos seleccionados
+    };
+
+    // Insertamos inmediatamente en la tabla
+    setCategoryList([...categoryList, newCat]);
+
+    // Limpiamos formulario y cerramos modal
     setNewCategory({ name: "", products: [] });
+    setModalOpen(false);
   };
 
+  // ------------------------------------------------------------
+  // TOGGLE PRODUCTOS
+  // ------------------------------------------------------------
   const toggleProductInCategory = (productId, isEditing = false) => {
     if (isEditing) {
       const exists = editingCategory.products.includes(productId);
@@ -60,15 +102,17 @@ export default function CategoriasAdmin({
     }
   };
 
-  const filteredProducts = productList.filter((p) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Lista de nombres para el toggle de edición (dinámica)
+  const categoryNames = categoryList.map((c) => c.name);
 
+  // ------------------------------------------------------------
+  // RENDER
+  // ------------------------------------------------------------
   return (
     <div style={{ padding: "2rem" }}>
       <h1>Gestión de Categorías</h1>
 
-      {/* Lista de categorías */}
+      {/* ---------------- LISTA DE CATEGORÍAS ---------------- */}
       <table
         border="1"
         cellPadding="8"
@@ -100,21 +144,14 @@ export default function CategoriasAdmin({
         </tbody>
       </table>
 
-      {/* Agregar nueva categoría */}
-      <h3 style={{ marginTop: "2rem" }}>Agregar Categoría</h3>
-      <input
-        type="text"
-        placeholder="Nombre"
-        value={newCategory.name}
-        onChange={(e) =>
-          setNewCategory({ ...newCategory, name: e.target.value })
-        }
-      />
-      <button style={{ marginLeft: "0.5rem" }} onClick={handleAddCategory}>
-        Agregar Categoría
+      {/* ---------------- AGREGAR NUEVA CATEGORÍA ---------------- */}
+      <button
+        style={{ marginTop: "1rem", padding: "6px 12px" }}
+        onClick={() => setModalOpen(true)}
+      >
+        + Agregar Categoría
       </button>
 
-      {/* Modal para seleccionar productos*/}
       {modalOpen && (
         <div
           style={{
@@ -123,61 +160,95 @@ export default function CategoriasAdmin({
             left: 0,
             width: "100%",
             height: "100%",
-            background: "rgba(0,0,0,0.5)",
+            backgroundColor: "rgba(0,0,0,0.5)",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+            zIndex: 9999,
           }}
         >
-          <div
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleAddCategory();
+            }}
             style={{
-              background: "#fff",
+              backgroundColor: "white",
               padding: "2rem",
-              width: "500px",
-              maxHeight: "80%",
-              overflowY: "auto",
+              borderRadius: "8px",
+              minWidth: "350px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1rem",
             }}
           >
-            <h3>Seleccionar Productos</h3>
-            <input
-              type="text"
-              placeholder="Buscar producto..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            <h3>Agregar Categoría</h3>
+
+            <label>
+              Nombre:
+              <input
+                type="text"
+                placeholder="Ingresa nombre de la categoría"
+                value={newCategory.name}
+                onChange={(e) =>
+                  setNewCategory({ ...newCategory, name: e.target.value })
+                }
+                style={{ width: "100%", padding: "8px", fontSize: "1rem" }}
+                required
+              />
+            </label>
+
+            <div>
+              <strong>Productos Asociados:</strong>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "0.5rem",
+                  marginTop: "0.5rem",
+                }}
+              >
+                {productList.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    style={{
+                      background: newCategory.products.includes(p.id)
+                        ? "#82ca9d"
+                        : "#eee",
+                      padding: "4px 8px",
+                    }}
+                    onClick={() => toggleProductInCategory(p.id, false)}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div
               style={{
-                marginTop: "1rem",
                 display: "flex",
-                flexWrap: "wrap",
-                gap: "0.5rem",
+                justifyContent: "flex-end",
+                gap: "1rem",
               }}
             >
-              {filteredProducts.map((p) => (
-                <button
-                  key={p.id}
-                  style={{
-                    background: newCategory.products.includes(p.id)
-                      ? "#82ca9d"
-                      : "#eee",
-                  }}
-                  onClick={() => toggleProductInCategory(p.id)}
-                >
-                  {p.name}
-                </button>
-              ))}
+              <button type="submit" style={{ padding: "8px 16px" }}>
+                Crear Categoría
+              </button>
+              <button
+                type="button"
+                style={{ padding: "8px 16px" }}
+                onClick={() => setModalOpen(false)}
+              >
+                Cancelar
+              </button>
             </div>
-            <button
-              style={{ marginTop: "1rem" }}
-              onClick={() => setModalOpen(false)}
-            >
-              Guardar Productos
-            </button>
-          </div>
+          </form>
         </div>
       )}
 
-      {/* Editar categoría */}
+      {/* ---------------- EDITAR CATEGORÍA ---------------- */}
       {editingCategory && (
         <div
           style={{
@@ -186,15 +257,23 @@ export default function CategoriasAdmin({
             padding: "1rem",
           }}
         >
-          <h3>Editar Categoría: {editingCategory.name}</h3>
-          <label style={{ marginRight: "0.5rem" }}>Nombre:</label>
-          <input
-            type="text"
-            value={editingCategory.name}
-            onChange={(e) =>
-              setEditingCategory({ ...editingCategory, name: e.target.value })
-            }
-          />
+          <h3>Editar Categoría</h3>
+          <label>
+            Selecciona Categoría:
+            <select
+              value={editingCategory.name}
+              onChange={(e) =>
+                setEditingCategory({ ...editingCategory, name: e.target.value })
+              }
+            >
+              {categoryNames.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <div style={{ marginTop: "1rem" }}>
             <strong>Productos Asociados:</strong>
             <div
@@ -212,6 +291,7 @@ export default function CategoriasAdmin({
                     background: editingCategory.products.includes(p.id)
                       ? "#82ca9d"
                       : "#eee",
+                    padding: "4px 8px",
                   }}
                   onClick={() => toggleProductInCategory(p.id, true)}
                 >
@@ -220,6 +300,7 @@ export default function CategoriasAdmin({
               ))}
             </div>
           </div>
+
           <button style={{ marginTop: "1rem" }} onClick={handleSaveEdit}>
             Guardar Cambios
           </button>

@@ -27,26 +27,67 @@ export default function DashboardAdmin() {
   const [usersData, setUsersData] = useState([]);
 
   useEffect(() => {
-    // Simulación de datos backend
-    setOrders([
-      { id: 101, user: "Juan Pérez", total: 120, date: "10-10-2025" },
-      { id: 102, user: "Ana Gómez", total: 75, date: "10-10-2025" },
-      { id: 103, user: "Luis Martínez", total: 200, date: "11-10-2025" },
-    ]);
-    setUsers([{ id: 1 }, { id: 2 }, { id: 3 }]);
-    setTotalIncome(395);
+    const fetchData = async () => {
+      try {
+        const token = user?.token; // JWT desde tu hook useAuth
+        if (!token) return;
 
-    setSalesData([
-      { day: "10 Oct", Ventas: 195 },
-      { day: "11 Oct", Ventas: 200 },
-      { day: "12 Oct", Ventas: 0 },
-    ]);
-    setUsersData([
-      { day: "10 Oct", NuevosUsuarios: 2 },
-      { day: "11 Oct", NuevosUsuarios: 1 },
-      { day: "12 Oct", NuevosUsuarios: 0 },
-    ]);
-  }, [startDate, endDate]);
+        // --- Métricas del dashboard ---
+        const metricsRes = await fetch(
+          "http://localhost:3000/api/admins/orders/metrics",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const metrics = await metricsRes.json();
+        setTotalIncome(metrics.totalIncome);
+        setUsers(Array.from({ length: metrics.newUsers }));
+
+        // --- Órdenes por fecha ---
+        const ordersRes = await fetch(
+          `http://localhost:3000/api/admins/orders/by-date?startDate=${startDate}&endDate=${endDate}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const ordersData = await ordersRes.json();
+
+        const mappedOrders = ordersData.map((o) => ({
+          id: o.id,
+          user: o.user_name ? `${o.user_name} ${o.user_lastname}` : "Invitado",
+          total: o.total,
+          date: new Date(o.created_at).toLocaleDateString(),
+        }));
+
+        setOrders(mappedOrders);
+
+        // --- Datos para gráficas ---
+        const salesMap = {};
+        const usersMap = {};
+
+        mappedOrders.forEach((o) => {
+          if (!salesMap[o.date]) salesMap[o.date] = 0;
+          salesMap[o.date] += o.total;
+          if (!usersMap[o.date]) usersMap[o.date] = 0;
+          usersMap[o.date] += 1;
+        });
+
+        setSalesData(
+          Object.keys(salesMap).map((day) => ({ day, Ventas: salesMap[day] }))
+        );
+        setUsersData(
+          Object.keys(usersMap).map((day) => ({
+            day,
+            NuevosUsuarios: usersMap[day],
+          }))
+        );
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchData();
+  }, [startDate, endDate, user]);
 
   const btnStyle = {
     padding: "10px 20px",
@@ -128,10 +169,16 @@ export default function DashboardAdmin() {
         <button style={btnStyle} onClick={() => navigate("/admin/categorias")}>
           Gestión de Categorías
         </button>
-        <button style={btnStyle} onClick={() => navigate("/admin/gestionar-usuarios")}>
+        <button
+          style={btnStyle}
+          onClick={() => navigate("/admin/gestionar-usuarios")}
+        >
           Gestión de Usuarios
         </button>
-        <button style={btnStyle} onClick={() => navigate("/admin/orders-management")}>
+        <button
+          style={btnStyle}
+          onClick={() => navigate("/admin/orders-management")}
+        >
           Gestión de Órdenes
         </button>
       </div>
